@@ -9,24 +9,34 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Serializer\SerializerInterface;
 
-
 #[Route('/api/cars')]
 class CarController extends AbstractController
 {
-    #[Route('/', name: 'cars')]
-    public function cars(SerializerInterface $serializer, CarRepository $carRepository): JsonResponse
-    {
-        $cars = $carRepository->findAll();
-        $serializedCars = $serializer->serialize($cars, 'json');
+    private SerializerInterface $serializer;
+    private CarRepository $carRepository;
 
-        return new JsonResponse($serializedCars, 200, [], true);
+    public function __construct(SerializerInterface $serializer, CarRepository $carRepository)
+    {
+        $this->serializer = $serializer;
+        $this->carRepository = $carRepository;
     }
 
-    #[Route('/{id}', name: 'car')]
-    public function car(Car $car = null): JsonResponse
+    #[Route('/', name: 'cars', methods: ['GET'])]
+    public function cars(): JsonResponse
     {
+        $cars = $this->carRepository->findAll();
+        $serializedCars = $this->serializer->serialize($cars, 'json');
+
+        return new JsonResponse($serializedCars, JsonResponse::HTTP_OK, [], true);
+    }
+
+    #[Route('/{id}', name: 'car', methods: ['GET'])]
+    public function car(int $id): JsonResponse
+    {
+        $car = $this->carRepository->find($id);
+        
         if (!$car) {
-            return $this->json(['error' => 'Car not found'], 404);
+            throw $this->createNotFoundException('Voiture non trouvée');
         }
 
         return $this->json($car);

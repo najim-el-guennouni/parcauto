@@ -12,11 +12,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Service\Reservation\ReservationService;
 
-
 #[Route('/api/reservations')]
 class ReservationController extends AbstractController
 {
-    
     private $reservationService;
     private $entityManager;
 
@@ -37,7 +35,7 @@ class ReservationController extends AbstractController
 
         // Check if dates are in proper order
         if ($dateStart >= $dateEnd) {
-            return $this->json('Reservation failed: End date should be after start date.', 400);
+            return $this->json('La réservation a échoué : la date de fin doit être après la date de début.', 400);
         }
 
         // Fetch user and car entities
@@ -46,7 +44,7 @@ class ReservationController extends AbstractController
 
         // Check if the car is available for the specified date range
         if (!$this->reservationService->isCarAvailable($car, $dateStart, $dateEnd)) {
-            return $this->json('Car is not available for the specified date range.', 400);
+            return $this->json('La voiture n\'est pas disponible pour la plage de dates spécifiée.', 400);
         }
 
         $reservation = new Reservation();
@@ -59,8 +57,7 @@ class ReservationController extends AbstractController
         // Persist reservation entity
         $this->entityManager->persist($reservation);
         $this->entityManager->flush();
-        return $this->json('Reservation successfully completed.', 200);
-
+        return $this->json('Réservation réussie.', 200);
     }
 
     #[Route('/{id}', name: 'modify_reservation', methods: ['PUT'])]
@@ -73,7 +70,7 @@ class ReservationController extends AbstractController
 
         // Validate date range
         if ($dateStart >= $dateEnd) {
-            return $this->json('Reservation failed: End date should be after start date.', 400);
+            return $this->json('La réservation a échoué : la date de fin doit être après la date de début.', 400);
         }
 
         // Update reservation data
@@ -88,14 +85,14 @@ class ReservationController extends AbstractController
         if ($carId) {
             $car = $entityManager->getRepository(Car::class)->find($carId);
             if (!$car) {
-                return $this->json('Car not found.', 404);
+                return $this->json('Voiture non trouvée.', 404);
             }
             $reservation->setCar($car);
         }
 
         $entityManager->flush();
 
-        return $this->json('Reservation modified successfully.');
+        return $this->json('Réservation modifiée avec succès.');
     }
 
     #[Route('/{id}', name: 'cancel_reservation', methods: ['DELETE'])]
@@ -104,6 +101,6 @@ class ReservationController extends AbstractController
         $entityManager->remove($reservation);
         $entityManager->flush();
 
-        return $this->json('Reservation canceled successfully.');
+        return $this->json('Réservation annulée avec succès.');
     }
 }

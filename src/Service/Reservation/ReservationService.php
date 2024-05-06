@@ -2,7 +2,6 @@
 namespace App\Service\Reservation;
 
 use App\Entity\Car;
-use App\Entity\User;
 use App\Entity\Reservation;
 use Doctrine\ORM\EntityManagerInterface;
 
