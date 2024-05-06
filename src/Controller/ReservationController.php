@@ -10,12 +10,24 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Service\Reservation\ReservationService;
+
 
 #[Route('/api/reservations')]
 class ReservationController extends AbstractController
 {
+    
+    private $reservationService;
+    private $entityManager;
+
+    public function __construct(ReservationService $reservationService, EntityManagerInterface $entityManager)
+    {
+        $this->reservationService = $reservationService;
+        $this->entityManager = $entityManager;
+    }
+
     #[Route('/', name: 'new_reservation', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function new(Request $request): JsonResponse
     {
         // Fetch request parameters
         $dateStart = strtotime($request->request->get('datestart'));
@@ -29,22 +41,28 @@ class ReservationController extends AbstractController
         }
 
         // Fetch user and car entities
-        $user = $entityManager->getRepository(User::class)->find($userId);
-        $car = $entityManager->getRepository(Car::class)->find($carId);
+        $user = $this->entityManager->getRepository(User::class)->find($userId);
+        $car = $this->entityManager->getRepository(Car::class)->find($carId);
+
+        // Check if the car is available for the specified date range
+        if (!$this->reservationService->isCarAvailable($car, $dateStart, $dateEnd)) {
+            return $this->json('Car is not available for the specified date range.', 400);
+        }
 
         // Create reservation entity
-        $reservation = new Reservation();
-        $reservation->setCar($car);
-        $reservation->setUser($user);
-        $reservation->setCreated(new \DateTime());
-        $reservation->setDateStart(new \DateTime($request->request->get('datestart')));
-        $reservation->setDateEnd(new \DateTime($request->request->get('dateend')));
-
-        // Persist reservation entity
-        $entityManager->persist($reservation);
-        $entityManager->flush();
-
-        return $this->json('Reservation successfully completed.', 200);
+        $reservationData = [
+            'user' => $userId,
+            'car' => $carId,
+            'datestart' => $request->request->get('datestart'),
+            'dateend' => $request->request->get('dateend'),
+        ];
+        
+        try {
+            $this->reservationService->createReservation($reservationData);
+            return $this->json('Reservation successfully completed.', 200);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json($e->getMessage(), 400);
+        }
     }
 
     #[Route('/{id}', name: 'modify_reservation', methods: ['PUT'])]
