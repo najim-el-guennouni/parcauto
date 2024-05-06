@@ -49,20 +49,18 @@ class ReservationController extends AbstractController
             return $this->json('Car is not available for the specified date range.', 400);
         }
 
-        // Create reservation entity
-        $reservationData = [
-            'user' => $userId,
-            'car' => $carId,
-            'datestart' => $request->request->get('datestart'),
-            'dateend' => $request->request->get('dateend'),
-        ];
-        
-        try {
-            $this->reservationService->createReservation($reservationData);
-            return $this->json('Reservation successfully completed.', 200);
-        } catch (\InvalidArgumentException $e) {
-            return $this->json($e->getMessage(), 400);
-        }
+        $reservation = new Reservation();
+        $reservation->setCar($car);
+        $reservation->setUser($user);
+        $reservation->setCreated(new \DateTime());
+        $reservation->setDateStart(new \DateTime($request->request->get('datestart')));
+        $reservation->setDateEnd(new \DateTime($request->request->get('dateend')));
+
+        // Persist reservation entity
+        $this->entityManager->persist($reservation);
+        $this->entityManager->flush();
+        return $this->json('Reservation successfully completed.', 200);
+
     }
 
     #[Route('/{id}', name: 'modify_reservation', methods: ['PUT'])]
