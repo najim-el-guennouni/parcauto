@@ -5,9 +5,10 @@ namespace App\Entity;
 use App\Repository\ReservationRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
 
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
-class Reservation
+class Reservation implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -92,5 +93,16 @@ class Reservation
         $this->dateEnd = $dateEnd;
 
         return $this;
+    }
+    
+    public function jsonSerialize()
+    {
+        return [
+            'id' => $this->id,
+            'car_id' => $this->car,
+            'car' => $this->car->getDesignation(),
+            'dateStart' => $this->dateStart,
+            'dateEnd' => $this->dateEnd,
+        ];
     }
 }

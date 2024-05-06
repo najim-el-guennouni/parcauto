@@ -6,9 +6,10 @@ use App\Repository\CarRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
 
 #[ORM\Entity(repositoryClass: CarRepository::class)]
-class Car
+class Car implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -75,4 +76,15 @@ class Car
 
         return $this;
     }
+    
+
+
+    public function jsonSerialize()
+    {
+        return [
+            'id' => $this->id,
+            'designation' => $this->designation,
+        ];
+    }
 }
+
